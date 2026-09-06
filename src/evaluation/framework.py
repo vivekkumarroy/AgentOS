@@ -64,7 +64,14 @@ class Evaluator:
                 
                 # Execute all tasks in the generated plan
                 executable = orchestrator.get_executable_tasks()
+                eval_start = time.time()
                 while executable:
+                    if time.time() - eval_start > (settings.timeout * 3):
+                        passed = False
+                        reason = "Evaluation case exceeded maximum global timeout."
+                        final_status = "FAILED"
+                        break
+                        
                     for task in executable:
                         completed_task = orchestrator.run_task_with_recovery(task.task_id)
                         final_status = completed_task.status.value

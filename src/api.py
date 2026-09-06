@@ -1,6 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Any, List
+import logging
 from .config import settings, setup_logging
 from .tools.registry import ToolRegistry
 from .tools.filesystem import ReadFileTool, WriteFileTool, ListDirectoryTool, SearchFilesTool
@@ -24,6 +26,7 @@ from .orchestration.orchestrator import Orchestrator
 setup_logging()
 
 app = FastAPI(title="AgentOS API", version="0.1.0")
+app_is_ready = True  # Used by /ready to determine if initialization succeeded
 
 # Setup Phase 4 components
 embedding_provider = get_embedding_provider()
@@ -108,9 +111,31 @@ registry.register(DelegateTaskTool(agent_registry, subagent_factory))
 class ExecuteTaskRequest(BaseModel):
     task: Task
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    logging.getLogger(__name__).error(f"Unhandled API error: {exc}\n{traceback.format_exc()}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error", "message": "An unexpected error occurred."}
+    )
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    return JSONResponse(
+        status_code=400,
+        content={"error": "Bad Request", "message": str(exc)}
+    )
+
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "environment": settings.app_env}
+    return {"status": "ok"}
+
+@app.get("/ready")
+def ready_check():
+    if app_is_ready:
+        return {"status": "ready"}
+    return JSONResponse(status_code=503, content={"status": "not_ready"})
 
 @app.get("/tools")
 def list_tools():

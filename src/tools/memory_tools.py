@@ -12,7 +12,7 @@ class MemoryStoreArgs(BaseModel):
 class MemoryStoreTool(BaseTool):
     name = "memory_store"
     description = "Stores important information in persistent long-term memory."
-    args_schema: Type[BaseModel] = MemoryStoreArgs
+    input_schema: Type[BaseModel] = MemoryStoreArgs
     
     def __init__(self, memory: LongTermMemory):
         self.memory = memory
@@ -29,7 +29,7 @@ class MemorySearchArgs(BaseModel):
 class MemorySearchTool(BaseTool):
     name = "memory_search"
     description = "Searches persistent long-term memory for relevant information."
-    args_schema: Type[BaseModel] = MemorySearchArgs
+    input_schema: Type[BaseModel] = MemorySearchArgs
     
     def __init__(self, memory: LongTermMemory):
         self.memory = memory
@@ -58,7 +58,7 @@ class MemoryDeleteArgs(BaseModel):
 class MemoryDeleteTool(BaseTool):
     name = "memory_delete"
     description = "Deletes a specific entry from long-term memory."
-    args_schema: Type[BaseModel] = MemoryDeleteArgs
+    input_schema: Type[BaseModel] = MemoryDeleteArgs
     
     def __init__(self, memory: LongTermMemory):
         self.memory = memory

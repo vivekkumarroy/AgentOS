@@ -1,4 +1,5 @@
 import logging
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -28,6 +29,25 @@ class Settings(BaseSettings):
     # Phase 6: Multi-Agent
     max_delegation_depth: int = 2
 
+    @field_validator('timeout', 'python_exec_timeout', 'max_task_retries', 'rag_top_k', 'max_delegation_depth', mode='before')
+    @classmethod
+    def clamp_positive(cls, v, info):
+        try:
+            val = int(v)
+            if val <= 0:
+                return 1
+            return val
+        except (ValueError, TypeError):
+            return 1
+
+    @field_validator('llm_provider', mode='before')
+    @classmethod
+    def validate_provider(cls, v):
+        valid = {"openai", "gemini", "anthropic"}
+        if str(v).lower() not in valid:
+            return "openai"
+        return str(v).lower()
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -42,3 +62,6 @@ def setup_logging():
         level=level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
+    # Silence noisy third-party loggers to avoid leaking secrets/headers
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)

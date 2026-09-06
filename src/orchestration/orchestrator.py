@@ -139,8 +139,20 @@ class Orchestrator:
         token_run_id = current_run_id.set(run_id)
         token_depth = current_delegation_depth.set(delegation_depth)
         try:
-
+            start_time = time.time()
             while task.status not in (TaskStatus.COMPLETED, TaskStatus.FAILED):
+                if time.time() - start_time > settings.timeout:
+                    logger.error(f"Task {task.task_id} exceeded execution timeout ({settings.timeout}s).")
+                    self.memory.update_task_status(task.task_id, TaskStatus.FAILED)
+                    self.tracer.emit(TraceEvent(run_id=run_id, task_id=task.task_id, event_type=EventType.FAILURE, status="ERROR", metadata={"error": "Execution timed out"}))
+                    break
+
+                if task.retry_count > settings.max_task_retries:
+                    logger.error(f"Task {task.task_id} exceeded max retries ({settings.max_task_retries}).")
+                    self.memory.update_task_status(task.task_id, TaskStatus.FAILED)
+                    self.tracer.emit(TraceEvent(run_id=run_id, task_id=task.task_id, event_type=EventType.FAILURE, status="ERROR", metadata={"error": "Max retries exceeded"}))
+                    break
+
                 self.memory.update_task_status(task.task_id, TaskStatus.RUNNING)
                 logger.info(f"TASK_STARTED: {task.task_id} (Attempt {task.retry_count + 1})")
                 self.tracer.emit(TraceEvent(run_id=run_id, task_id=task.task_id, event_type=EventType.TASK_STARTED, status="STARTED", metadata={"retry_count": task.retry_count}))

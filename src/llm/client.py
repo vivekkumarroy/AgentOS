@@ -37,8 +37,11 @@ class LLMClient:
             )
             return str(response.choices[0].message.content)
         except Exception as e:
-            logger.error(f"Error in LLM generation: {e}")
-            raise
+            error_str = str(e)
+            if settings.api_key and settings.api_key in error_str:
+                error_str = error_str.replace(settings.api_key, "***REDACTED***")
+            logger.error(f"Error in LLM generation: {error_str}")
+            raise RuntimeError(error_str) from None
 
     def generate_structured_output(self, prompt: str, schema: Type[T]) -> T:
         """Generate structured output validating against a Pydantic schema."""
@@ -59,5 +62,8 @@ class LLMClient:
             data = json.loads(content)
             return schema(**data)
         except Exception as e:
-            logger.error(f"Error in structured LLM generation: {e}")
-            raise
+            error_str = str(e)
+            if settings.api_key and settings.api_key in error_str:
+                error_str = error_str.replace(settings.api_key, "***REDACTED***")
+            logger.error(f"Error in structured LLM generation: {error_str}")
+            raise RuntimeError(error_str) from None

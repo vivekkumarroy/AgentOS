@@ -38,6 +38,8 @@ class LocalTracer(Tracer):
                     for k, v in data.items()}
         elif isinstance(data, list):
             return [self._redact(i) for i in data]
+        elif isinstance(data, str) and len(data) > 10000:
+            return data[:10000] + "... [TRUNCATED]"
         return data
 
     def emit(self, event: TraceEvent):
