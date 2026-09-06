@@ -1,8 +1,8 @@
 # AgentOS
 
-> An autonomous AI agent execution platform with planning, tool execution, verification, recovery, long-term memory, RAG, tracing, and evaluation.
+> An autonomous AI agent execution platform with planning, tool execution, verification, recovery, long-term memory, RAG, tracing, evaluation, and multi-agent coordination.
 
-AgentOS is an advanced orchestration framework designed to elevate AI agents beyond simple chatbots. Instead of a basic request-response loop, AgentOS executes complex tasks by leveraging a dynamic tool registry, verifying outcomes, diagnosing failures, and recovering autonomously. It maintains persistent semantic memory, retrieves knowledge using Retrieval-Augmented Generation (RAG), records structured execution traces, and evaluates agent behavior deterministically.
+AgentOS is an advanced orchestration framework designed to elevate AI agents beyond simple chatbots. Instead of a basic request-response loop, AgentOS executes complex tasks by leveraging a dynamic tool registry, verifying outcomes, diagnosing failures, and recovering autonomously. It maintains persistent semantic memory, retrieves knowledge using Retrieval-Augmented Generation (RAG), records structured execution traces, evaluates agent behavior deterministically, and supports hierarchical multi-agent delegation.
 
 ## Tech Stack
 
@@ -54,6 +54,7 @@ At every step, AgentOS maintains state, persists semantic knowledge, emits struc
 | **Document Ingestion** | Extracts and chunks content from TXT, MD, and PDF files. |
 | **Structured Tracing** | Records detailed execution lifecycles to JSONL with credential redaction. |
 | **Evaluation Framework** | Tests agent behavior deterministically across simulated edge cases. |
+| **Multi-Agent Coordination** | Hierarchical delegation to specialized sub-agents with depth protection. |
 | **REST APIs** | Exposes orchestration, memory management, and evaluation over HTTP. |
 | **Workspace Security** | Sandboxes file operations and blocks path traversal attempts. |
 
@@ -104,6 +105,7 @@ AgentOS was developed iteratively, ensuring each layer was fully verified before
 | Phase 3 | Verification & Autonomous Recovery | ✅ Completed |
 | Phase 4 | Long-Term Memory & RAG | ✅ Completed |
 | Phase 5 | Tracing & Deterministic Evaluation | ✅ Completed |
+| Phase 6 | Multi-Agent Coordination | ✅ Completed |
 
 ## Long-Term Memory & RAG
 
@@ -135,7 +137,16 @@ The platform includes an evaluation framework designed to test AI behavior deter
 - Validates expected tool usage, final task statuses, and expected file system side-effects.
 - Generates a comprehensive `EvalReport` with duration, tool counts, and recovery metrics.
 
-**Current Verification:** 49/49 tests passing.
+**Current Verification:** 56/56 tests passing.
+
+## Multi-Agent Coordination
+
+AgentOS leverages a tool-based delegation model that preserves the resilience of the single-agent loop while expanding capabilities:
+- **Agent Profiles & Registry:** Agents are registered with specific personas and strict subsets of allowed tools.
+- **Hierarchical Delegation:** A Coordinator agent delegates tasks dynamically using the `DelegateTaskTool`.
+- **Isolated State:** Sub-agents spin up fresh `Orchestrator` instances with isolated short-term memory, preventing pollution.
+- **Trace Correlation:** Parent `run_id`, `subagent_name`, and `delegation_depth` are automatically injected into child traces via `contextvars`.
+- **Recursion Protection:** Configurable `MAX_DELEGATION_DEPTH` prevents runaway delegation chains.
 
 ## API
 
@@ -159,6 +170,9 @@ The system exposes its capabilities via a FastAPI interface.
 - `GET /traces/{task_id}` - Retrieves all tracing events for a given task or run.
 - `POST /evaluate` - Runs a suite of deterministic test cases and returns an evaluation report.
 
+### Multi-Agent (Phase 6)
+- `GET /agents` - Returns a list of all registered agent profiles and their allowed tools.
+
 ## Security
 
 AgentOS is designed with AI-specific security boundaries:
@@ -175,8 +189,8 @@ The project maintains strict test-driven integrity.
 pytest -v -W default
 ```
 
-- **Status:** 49 tests passed.
-- **Coverage:** Phases 1–5 regression coverage.
+- **Status:** 56 tests passed.
+- **Coverage:** Phases 1–6 regression coverage.
 - *Note: The 3 remaining warnings are standard third-party deprecation notices (Starlette/ChromaDB), not AgentOS issues.*
 
 ## Manual Verification
@@ -249,6 +263,7 @@ curl -X POST http://localhost:8000/rag/search \
 ## Engineering Highlights
 
 - **Modular Architecture:** Clean separation of concerns between planning, execution, verification, and recovery.
+- **Hierarchical Delegation:** Safe, state-isolated multi-agent coordination without secondary architectures.
 - **Persistent Vector Memory:** ChromaDB integrated directly into the agent lifecycle.
 - **Deterministic Evaluation:** Testing framework that guarantees predictable agent behaviors.
 - **Structured Tracing:** Enterprise-grade observability into the AI decision loop.

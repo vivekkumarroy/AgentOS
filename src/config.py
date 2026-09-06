@@ -18,12 +18,15 @@ class Settings(BaseSettings):
     vector_db_path: str = "./data/chroma"
     vector_collection_name: str = "agent_long_term_memory"
     embedding_model: str = "local"
-    rag_chunk_size: int = 1000
-    rag_chunk_overlap: int = 200
+    rag_chunk_size: int = 500
+    rag_chunk_overlap: int = 50
     rag_top_k: int = 5
     
-    # Phase 5
-    trace_storage_path: str = "./data/traces.jsonl"
+    # Tracing
+    trace_storage_path: str = "traces.jsonl"
+    
+    # Phase 6: Multi-Agent
+    max_delegation_depth: int = 2
 
     model_config = SettingsConfigDict(
         env_file=".env",

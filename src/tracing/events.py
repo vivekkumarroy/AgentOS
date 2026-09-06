@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, Field
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import uuid
 import time
 
@@ -29,3 +29,8 @@ class TraceEvent(BaseModel):
     event_type: EventType
     status: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    
+    # Phase 6: Multi-Agent Tracing
+    parent_run_id: Optional[str] = None
+    subagent_name: Optional[str] = None
+    delegation_depth: int = 0

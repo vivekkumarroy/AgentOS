@@ -80,6 +80,31 @@ evaluator = Evaluator(
     tracer=tracer
 )
 
+# Setup Phase 6 Multi-Agent components
+from .models.agent import AgentProfile
+from .orchestration.registry import AgentRegistry
+from .orchestration.factory import SubAgentFactory
+from .tools.delegation import DelegateTaskTool
+
+agent_registry = AgentRegistry()
+agent_registry.register(AgentProfile(
+    name="Coordinator",
+    description="Main orchestration agent capable of planning and delegation.",
+    system_prompt="You are the primary coordinator agent.",
+    allowed_tools=registry.list_tools() + ["delegate_task"]
+))
+agent_registry.register(AgentProfile(
+    name="Calculator",
+    description="Specialized agent for mathematical and logic calculations via Python.",
+    system_prompt="You are a strict calculation agent. Use python to solve math problems.",
+    allowed_tools=["python_exec"]
+))
+
+subagent_factory = SubAgentFactory(registry, llm_client, tracer)
+registry.register(DelegateTaskTool(agent_registry, subagent_factory))
+
+
+
 class ExecuteTaskRequest(BaseModel):
     task: Task
 
@@ -172,4 +197,9 @@ class EvaluateRequest(BaseModel):
 def evaluate(request: EvaluateRequest):
     report = evaluator.evaluate(request.cases)
     return report
+
+# Phase 6 Endpoints
+@app.get("/agents")
+def get_agents():
+    return {"agents": [p.model_dump() for p in agent_registry.list()]}
 
